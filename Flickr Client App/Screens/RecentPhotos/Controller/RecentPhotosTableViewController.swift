@@ -8,7 +8,7 @@
 import UIKit
 
 class RecentPhotosTableViewController: UITableViewController, UISearchResultsUpdating {
-
+    
     private var response: PhotosResponse? {
         didSet {
             DispatchQueue.main.async {
@@ -17,12 +17,22 @@ class RecentPhotosTableViewController: UITableViewController, UISearchResultsUpd
         }
     }
     
+    private var selectedPhoto: Photo?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupSearchController()
         fetchRecentPhotos()
     }
     
+    // MARK: - SearchBar
+    private func setupSearchController() {
+        let search = UISearchController(searchResultsController: nil)
+        search.searchResultsUpdater = self
+        search.obscuresBackgroundDuringPresentation = false
+        search.searchBar.placeholder = "Type something here to search"
+        navigationItem.searchController = search
+    }
     // MARK: - Fetch Photos
     private func fetchRecentPhotos() {
         guard let url = URL(string : "https://www.flickr.com/services/rest/?method=flickr.photos.getRecent&api_key=c5f4b67bc41dfc9ef1d47da1dd791b5b&format=json&nojsoncallback=1&extras=description,owner_name,icon_server,url_n,url_z") else { return }
@@ -40,7 +50,7 @@ class RecentPhotosTableViewController: UITableViewController, UISearchResultsUpd
     }
     // MARK: - Fetch Search
     private func searchPhotos(with text: String) {
-        guard let url = URL(string : "https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=c5f4b67bc41dfc9ef1d47da1dd791b5b&text=flower&format=json&nojsoncallback=1&extras=description,owner_name,icon_server,url_n,url_z") else { return }
+        guard let url = URL(string : "https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=c5f4b67bc41dfc9ef1d47da1dd791b5b&text=\(text)&format=json&nojsoncallback=1&extras=description,owner_name,icon_server,url_n,url_z") else { return }
         let request = URLRequest(url: url)
         
         URLSession.shared.dataTask(with: request) { data, response, error in
@@ -52,14 +62,6 @@ class RecentPhotosTableViewController: UITableViewController, UISearchResultsUpd
                 self.response = response
             }
         }.resume()
-    }
-    // MARK: - SearchBar
-    private func setupSearchController() {
-        let search = UISearchController(searchResultsController: nil)
-        search.searchResultsUpdater = self
-        search.obscuresBackgroundDuringPresentation = false
-        search.searchBar.placeholder = "Type something here to search"
-        navigationItem.searchController = search
     }
     
     override func numberOfSections(in tableView: UITableView) -> Int {
@@ -77,37 +79,30 @@ class RecentPhotosTableViewController: UITableViewController, UISearchResultsUpd
         cell.ownerImageView.backgroundColor = .darkGray
         cell.ownerNameLabel.text = photo?.ownername
         
-        if let urlString = photo?.urlN,let url = URL(string: urlString) {
-            let request = URLRequest(url: url)
-            URLSession.shared.dataTask(with: request) { data, response, error in
-                if let error = error {
-                    debugPrint(error)
-                    return
-                }
-                if let data = data {
-                    DispatchQueue.main.async {
-                        cell.photoImageView.image = UIImage(data: data)
-                    }
-                }
-            }.resume()
+        NetworkManager.shared.fetchImage(with: photo?.buddyIconUrl) { data in
+            cell.ownerImageView.image = UIImage(data: data)
         }
+        
+        NetworkManager.shared.fetchImage(with: photo?.urlN) { data in
+            cell.photoImageView.image = UIImage(data: data)
+        }
+        
         cell.titleLabel.text = photo?.title
         return cell
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         performSegue(withIdentifier: "detailSeue", sender: nil)
+        selectedPhoto = response?.photos?.photo?[indexPath.row]
     }
     
     // MARK: - Navigation
-
-//    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-//        // Get the new view controller using segue.destination.
-//        // Pass the selected object to the new view controller.
-//        if let viewController = segue.destination as? PhotoDetailViewController {
-//            // TODO: send selected photo to detail screen
-//        }
-//    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if let viewController = segue.destination as? PhotoDetailViewController {
+            viewController.photo = selectedPhoto
+        }
+    }
     
     // MARK: - UISearchResultsUpdating
     
