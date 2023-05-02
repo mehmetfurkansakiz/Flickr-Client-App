@@ -10,4 +10,4 @@ I created this project while learning swift programming. It is a project that I 
 
 ## App Video
 
-https://user-images.githubusercontent.com/62005335/235795547-9b8ca5f3-6175-4de5-8722-7c64a9415fa5.mp4
+https://user-images.githubusercontent.com/62005335/235798021-63dd7410-e9c2-4f8a-9ac6-4e4feaeaee3d.mp4
