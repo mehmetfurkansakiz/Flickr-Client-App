@@ -19,7 +19,7 @@ struct Photo: Codable {
     let heightN, widthN: Int?
     let urlZ: String?
     let heightZ, widthZ: Int?
-
+    
     enum CodingKeys: String, CodingKey {
         case id, owner, secret, server, farm, title, ispublic, isfriend, isfamily, description, ownername, iconserver, iconfarm
         case urlN = "url_n"
@@ -31,11 +31,26 @@ struct Photo: Codable {
     }
 }
 
-// MARK: - Description
-struct Description: Codable {
-    let content: String
-
-    enum CodingKeys: String, CodingKey {
-        case content = "_content"
+extension Photo {
+    var buddyIconUrl: String? {
+        if let iconserver = iconserver,
+           let iconfarm = iconfarm,
+           let nsid = owner,
+           NSString(string: iconserver).intValue > 0 {
+            return "https://farm\(iconfarm).staticflickr.com/\(iconserver)/buddyicons/\(nsid).jpg"
+        } else {
+            return "https://www.flickr.com/images/buddyicon.gif"
+        }
+    }
+    
+    
+    
+    // MARK: - Description
+    struct Description: Codable {
+        let content: String
+        
+        enum CodingKeys: String, CodingKey {
+            case content = "_content"
+        }
     }
 }
